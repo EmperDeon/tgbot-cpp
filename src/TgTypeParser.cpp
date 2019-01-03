@@ -665,6 +665,7 @@ InputMedia::Ptr TgTypeParser::parseJsonAndGetInputMedia(const ptree& data) const
         result->duration = data.get<int32_t>("duration", 0);
         result->title = data.get<int32_t>("title", 0);
         result->performer = data.get<int32_t>("performer", 0);
+        return result;
     }
     else {
         return nullptr;
@@ -679,19 +680,19 @@ string TgTypeParser::parseInputMedia(const InputMedia::Ptr& object) const {
     result += '{';
     switch(object->type) {
         case InputMedia::TYPE::PHOTO:
-            appendToJson(result, "type", "photo");
+            appendToJson(result, "type", "\"photo\"");
         break;
         case InputMedia::TYPE::VIDEO:
-            appendToJson(result, "type", "video");
+            appendToJson(result, "type", "\"video\"");
         break;
         case InputMedia::TYPE::ANIMATION:
-            appendToJson(result, "type", "animation");
+            appendToJson(result, "type", "\"animation\"");
         break;
         case InputMedia::TYPE::DOCUMENT:
-            appendToJson(result, "type", "document");
+            appendToJson(result, "type", "\"document\"");
         break;
         case InputMedia::TYPE::AUDIO:
-            appendToJson(result, "type", "audio");
+            appendToJson(result, "type", "\"audio\"");
         break;
     }   
     appendToJson(result, "media", object->media);

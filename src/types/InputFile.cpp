@@ -17,7 +17,7 @@ InputFile::Ptr InputFile::fromFile(const string& filePath, const string& mimeTyp
     auto result(make_shared<InputFile>());
     result->data = FileTools::read(filePath);
     result->mimeType = mimeType;
-    result->fileName = StringTools::split(filePath, '/').back();
+    result->fileName = filePath; //StringTools::split(filePath, '/').back();
     return result;
 }
 

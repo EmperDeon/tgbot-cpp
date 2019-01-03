@@ -24,70 +24,79 @@
 
 #include "tgbot/net/CurlHttpClient.h"
 
-#include <boost/asio/ssl.hpp>
-
 namespace TgBot {
 
-CurlHttpClient::CurlHttpClient() : _httpParser() {
-    curlSettings = curl_easy_init();
-}
+    CurlHttpClient::CurlHttpClient() : _httpParser() {
+        curlSettings = curl_easy_init();
+    }
 
-CurlHttpClient::~CurlHttpClient() {
-    curl_easy_cleanup(curlSettings);
-}
+    CurlHttpClient::~CurlHttpClient() {
+        curl_easy_cleanup(curlSettings);
+    }
 
-static size_t curlWriteString(char* ptr, size_t size, size_t nmemb, void* userdata) {
-    std::string &s = *(std::string *)userdata;
-    auto read = size * nmemb;
-    s.append(ptr, ptr + read);
-    return read;
-};
+    static size_t curlWriteString(char *ptr, size_t size, size_t nmemb, void *userdata) {
+        std::string &s = *(std::string *) userdata;
+        auto read = size * nmemb;
+        s.append(ptr, ptr + read);
+        return read;
+    };
 
-std::string CurlHttpClient::makeRequest(const Url& url, const std::vector<HttpReqArg>& args) const {
-    // Copy settings for each call because we change CURLOPT_URL and other stuff.
-    // This also protects multithreaded case.
-    auto curl = curl_easy_duphandle(curlSettings);
+    std::string CurlHttpClient::makeRequest(const Url &url, const std::vector<HttpReqArg> &args) const {
+        // Copy settings for each call because we change CURLOPT_URL and other stuff.
+        // This also protects multithreaded case.
+        auto curl = curl_easy_duphandle(curlSettings);
 
-    std::string u = url.protocol + "://" + url.host + url.path;
-    curl_easy_setopt(curl, CURLOPT_URL, u.c_str());
+        std::string u = url.protocol + "://" + url.host + url.path;
+        curl_easy_setopt(curl, CURLOPT_URL, u.c_str());
 
-    // disable keep-alive
-    struct curl_slist* headers = nullptr;
-    headers = curl_slist_append(headers, "Connection: close");
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        // disable keep-alive
+        struct curl_slist *headers = nullptr;
+        headers = curl_slist_append(headers, "Connection: close");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        struct curl_httppost *post = nullptr;
+        struct curl_httppost *last = nullptr;
 
-    std::string data;
-    std::vector<char*> escaped;
-    if (!args.empty()) {
-        for (const HttpReqArg& a : args) {
-            escaped.push_back(curl_easy_escape(curl, a.name.c_str(), a.name.size()));
-            data += escaped.back() + std::string("=");
-            escaped.push_back(curl_easy_escape(curl, a.value.c_str(), a.value.size()));
-            data += escaped.back() + std::string("&");
+        std::string data;
+        std::vector<char *> escaped;
+        if (!args.empty()) {
+            for (const HttpReqArg &a : args) {
+                if (!a.isFile) {
+                    curl_formadd(&post, &last,
+                                 CURLFORM_COPYNAME, a.name.c_str(),
+                                 CURLFORM_COPYCONTENTS, a.value.c_str(),
+                                 CURLFORM_END);
+                } else {
+                    auto name = curl_easy_escape(curl, a.name.c_str(), a.name.size());
+                    escaped.push_back(name);
+                    curl_formadd(&post, &last,
+                                 CURLFORM_COPYNAME, name,
+                                 CURLFORM_FILE, a.fileName.c_str(),
+                                 CURLFORM_CONTENTTYPE, a.mimeType.c_str(),
+                                 CURLFORM_END);
+                }
+
+            }
+            curl_easy_setopt(curl, CURLOPT_HTTPPOST, post);
         }
-        data.resize(data.size() - 1);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data.c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)data.size());
+
+        std::string response;
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlWriteString);
+
+        auto res = curl_easy_perform(curl);
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+
+        for (auto &e : escaped) {
+            curl_free(e);
+        }
+
+        if (res != CURLE_OK) {
+            throw std::runtime_error(std::string("curl error: ") + curl_easy_strerror(res));
+        }
+
+        return _httpParser.extractBody(response);
     }
-
-    std::string response;
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlWriteString);
-
-    auto res = curl_easy_perform(curl);
-    curl_slist_free_all(headers);
-    curl_easy_cleanup(curl);
-
-    for (auto& e : escaped) {
-        curl_free(e);
-    }
-
-    if (res != CURLE_OK) {
-        throw std::runtime_error(std::string("curl error: ") + curl_easy_strerror(res));
-    }
-
-    return _httpParser.extractBody(response);
-}
 
 }
 

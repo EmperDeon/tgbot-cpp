@@ -1149,6 +1149,10 @@ ptree Api::sendRequest(const string& method, const vector<HttpReqArg>& args) con
     url += "/";
     url += method;
 
+//    for (auto arg : args) {
+//        printf("%s : %s\n", arg.name.c_str(), arg.value.c_str());
+//    }
+
     string serverResponse = _httpClient.makeRequest(url, args);
     if (!serverResponse.compare(0, 6, "<html>")) {
         throw TgException("tgbot-cpp library have got html page instead of json response. Maybe you entered wrong bot token.");
