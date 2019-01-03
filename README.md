@@ -1,6 +1,7 @@
 # tgbot-cpp
 
-[![Build Status](https://travis-ci.org/reo7sp/tgbot-cpp.svg?branch=master)](https://travis-ci.org/reo7sp/tgbot-cpp)
+[![Travis build Status](https://travis-ci.org/reo7sp/tgbot-cpp.svg?branch=master)](https://travis-ci.org/reo7sp/tgbot-cpp)
+[![Appveyor build status](https://ci.appveyor.com/api/projects/status/tncys4p1flm8817m?svg=true)](https://ci.appveyor.com/project/reo7sp/tgbot-cpp)
 [![Docker Hub pulls](https://img.shields.io/docker/pulls/reo7sp/tgbot-cpp.svg)](https://hub.docker.com/r/reo7sp/tgbot-cpp/)
 [![Open documentation](https://img.shields.io/badge/open-documentation-orange.svg)](http://reo7sp.github.io/tgbot-cpp)
 [![Donate using PayPal](https://img.shields.io/badge/donate-PayPal-orange.svg)](https://paypal.me/reo7sp)
@@ -58,26 +59,34 @@ int main() {
 All other samples are located [here](samples).
 
 
-## Library compilation
+## Dependencies
 
 Firstly you need to install some dependencies such as Boost and build tools such as CMake. On Debian-based distibutives you can do it with these commands:
 ```sh
-sudo apt-get install g++ make binutils cmake libssl-dev libboost-system-dev
+sudo apt-get install g++ make binutils cmake libssl-dev libboost-system-dev zlib1g-dev
 ```
 If you want to use curl-based http client `CurlHttpClient`, you also need to install `libcurl4-openssl-dev` package.
 
-To compile the library execute this commands:
+## Library installation
+
+If you want to install the library system-wide:
 ```sh
-cd /path/where/you/have/cloned/the/library/repository
+git clone https://github.com/reo7sp/tgbot-cpp
+cd tgbot-cpp
 cmake .
 make -j4
 sudo make install
 ```
 
+Or you can treat this repository as a submodule of your project, for example, see [echobot-submodule](samples/echobot-submodule/CMakeLists.txt)
+
 ## Specific library installation notes
 
 ### Docker
 You can use Docker to build and run your bot. Set the base image of your's Dockerfile to [reo7sp/tgbot-cpp](https://hub.docker.com/r/reo7sp/tgbot-cpp/).
+
+### Conan
+You can use Conan C/C++ Package Manager. Follow [Conan instructions](https://docs.conan.io/en/latest/getting_started.html) and use [the template](https://github.com/reo7sp/tgbot-cpp/tree/master/samples/echobot-conan).
 
 ### Arch Linux
 A PKGBUILD compiles shared library with header files is hosted on [Arch Linux User Repository](https://aur.archlinux.org/packages/libtgbot-cpp-git/).
